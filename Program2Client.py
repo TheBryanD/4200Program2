@@ -46,12 +46,10 @@ def send(seq_num, ack_num, ack, syn, fin, data, addr):
 	
 def recv():
 	data, addr = sock.recvfrom(1024)
-	seq_num, ack_num, notUsed, ack, syn, fin = struct.unpack('II29sccc', data)
-	if(data):
-		print(data)
-	else:
-		time.sleep(2)
-	return ack_num, seq_num, notUsed, ack, syn, fin, addr
+	unpacker = struct.Struct('!II29sccc512s')
+	unpackedData = unpacker.unpack(data)
+	print(data)
+	return unpackedData, addr
 
 seq_num = 12345
 ack_num = 0
@@ -67,8 +65,14 @@ while True:
 			print("Data got sent")
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
-			seq_num, ack_num, notUsed, ack, syn, fin, addr = recv()
-			print("Data got receiv")
+			unpackedData, addr = recv()
+			seq_num = unpackedData[1]
+			ack_num = unpackedData[0]
+			ack = unpackedData[2]
+			syn = unpackedData[3]
+			fin = unpackedData[4]
+
+			print("Data got received")
 			file.write("RECV ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			ack_num += 1
@@ -76,7 +80,14 @@ while True:
 			send(seq_num, ack_num, ack, syn, fin, data, addr)
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 		else:
-			seq_num, ack_num, notUsed, ack, syn, fin, addr = recv()
+			unpackedData, addr = recv()
+			seq_num = unpackedData[1]
+			ack_num = unpackedData[0]
+			ack = unpackedData[2]
+			syn = unpackedData[3]
+			fin = unpackedData[4]
+
+			print("Data got received")
 			file.write("RECV ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			if(fin == 'Y'):
