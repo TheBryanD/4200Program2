@@ -29,6 +29,7 @@ seekFrom = 0
 chunks = []
 payloadIterator = 0
 isLastPacket = False
+ackNumToCompare = 12345
 
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -88,7 +89,7 @@ while True:
         print("Unpacker created")
         unpackedData = unpacker.unpack(recvData)
         print("Received: ")
-
+        #Easier to read Info
         unpack1 = unpackedData[0]
         unpack2 = unpackedData[1]
         unpack3 = unpackedData[3].decode()
@@ -96,9 +97,21 @@ while True:
         unpack5 = unpackedData[5].decode()
         unpack6 = unpackedData[6].decode()
         print(str(unpack1) + " " + str(unpack2) + " " + str(unpack3) + " " + str(unpack4) + " " + str(unpack5) + " " + unpack6)
+
+        #If last packet was received (Fin == 'Y'), Log the info and start the loop again
+        if unpack5 == 'Y':
+            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            continue
         
+        #If packets ack isnt the ack expected, and its not the handshake packet, wait 0.5sec and send again
+        if unpack1 != ackNumToCompare and int(unpack1) != 12345:
+            sock.sendto(header, addr)
+            print("Error, RETRANSMITTING...")
+            time.sleep(0.5)
+            file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
 
         #send data back to client and log
+            #If a handshake packet
         if int(unpackedData[0]) == 12345:
             #send ack handshake packet
             print("This packet was a handshake packet")
@@ -108,29 +121,32 @@ while True:
             else: 
                 print("syn: N")
                 syn = 'N'
+            
+            #Create Packet to send
             sqnc_num = unpackedData[0]
+            ackNumToCompare = unpackedData[0]+1
             print("Creating Header")
             header = createPacket(100, sqnc_num+1, 'Y', syn, 'N', "")
             print("Sending header: " + str(header))
-            try:
-                sock.sendto(header, addr)
-            except:
-                print("Error occurred, retransmitting")
-                file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
-                time.sleep(0.5)
-                sock.sendto(header, addr)
+
+            #send
+            sock.sendto(header, addr)
             print("HeaderSent")
             print("Sent: " + str(header)) 
 
+            #Log the info
             file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(100) + " " + str((sqnc_num+1)) + " " + 'Y' + " " + syn + " " + 'N' + '\n')
             print("Logged data and finished first loop")
             print("Trying to receive data: ")
+
+            #If not a handshake packet
         else:
             print("This packet was not a handshake packet")
             #create packet to send back
             sqnc_num = unpackedData[1]+1
             ack_num = unpackedData[0]+1
+            ackNumToCompare = unpackedData[0]+1
             ack = 'Y'
             syn = 'N'
             if payloadIterator+2 == totalNumIteration:
@@ -142,35 +158,35 @@ while True:
             print("Creating Header")
 
             #Create 512 bytes of the file to send as the payload
-            try:
-                chunk = chunks[payloadIterator]
-                data.close()
-            except IndexError:
-                print("Index out of bounds while creating chunks")
-            except Exception as ex:
-                print(ex)
+            #try:
+            chunk = chunks[payloadIterator]
+            data.close()
+            #except IndexError:
+            #    print("Index out of bounds while creating chunks")
+            # except Exception as ex:
+            #    print(ex)
 
+            #Create packet to send back
             header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
-            #Send to client and log
+
+            #Send to client
             print("Sending Header " + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin + " ")
-            try:
-                sock.sendto(header, addr)
-            except:
-                print("Error occurred, retransmitting")
-                time.sleep(0.5)
-                file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            sock.sendto(header, addr)
             print("Header sent")
 
+            #Log info 
             file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num-1) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
+            #iteration +=1 
             payloadIterator += 1
+
+            #Check and see if this is the last packet to send to the client
+                #If it is last packet, reset variables
             if isLastPacket == True:
                 payloadIterator = 0
                 isLastPacket = False
-                print("Program ended")
-                #sock.close()
-                #file.close()
-                #sys.exit(1)
+ 
+                #If not last packet, Continue looping with variables the way they are
             else:
                 print("finishing loop and doing again")
                 print("Trying to receive Data: ")
