@@ -1,6 +1,5 @@
 import socket
 import struct
-from struct import unpack
 import sys
 import time
 import urllib.request, urllib.error, urllib.parse
@@ -12,11 +11,11 @@ def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
     try:
         data = struct.pack('!I', sequence_nunmber)
         data += struct.pack('!I', ack_number)
-        data += struct.pack('29s', '')
-        data += struct.pack("!c", ack)
-        data += struct.pack("!c", syn)
-        data += struct.pack("!c", fin)
-        data += struct.pack('512s', payload)
+        data += struct.pack('29s', ''.encode())
+        data += struct.pack("!c", ack.encode())
+        data += struct.pack("!c", syn.encode())
+        data += struct.pack("!c", fin.encode())
+        data += struct.pack('512s', payload.encode())
         return data
     except Exception as ex:
         print("Error creating packet: ", + ex)
@@ -59,7 +58,7 @@ while True:
     #Receive data from client
         recvData, addr = sock.recvfrom(1024)
         print("received data")
-        unpacker = struct.Struct('II29sccc512s')
+        unpacker = struct.Struct('!II29sccc512s')
         print("unpacker created")
         unpackedData = unpacker.unpack(recvData)
         print("received: ", unpackedData)
@@ -75,9 +74,9 @@ while True:
                 syn = 'N'
             sqnc_num = unpackedData[0]
             print("Creating Header")
-            header = createPacket(100, sqnc_num+1, 'Y', syn, 'N')
+            header = createPacket(100, sqnc_num+1, 'Y', syn, 'N', "")
             print("Sending header")
-            sock.sendto(addr, header)
+            sock.sendto(header, addr)
             print("HeaderSent")
 
             file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
@@ -86,16 +85,24 @@ while True:
             isLastPacket = False
             print("This packet was not a handshake packet")
             #create packet to send back
-            sqnc_num = unpackedData[1] +1
-            ack_num = unpackedData[0] +1
+            sqnc_num = unpackedData[1]+1
+            ack_num = unpackedData[0]+1
             ack = 'Y'
             syn = 'N'
             if isLastPacket == True:
                 fin = 'Y'
             else:
                 fin = 'N'
-            header = createPacket(sqnc_num, ack_num, ack, syn, fin)
+            print("Creating Header")
+            try:
+                header = createPacket(sqnc_num, ack_num, ack, syn, fin, "")
+            except Exception as ex:
+                print(ex)
+                exit(1)
+
+            print("Sending Header")
             sock.sendto(header, addr)
+            print("Header sent")
 
             file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
             file.write("SEND ", ack_num, " ", sqnc_num+1, " ", ack, " ", syn, " ", fin)
@@ -110,7 +117,8 @@ while True:
     except KeyboardInterrupt: #CTRL+^C
         sock.close()
         file.close()
-    except Exception as ex:
-        print("Error: ", ex)
+    except:
+    #except Exception as ex:
+        #print("Error: ", ex)
         sock.close()
         file.close()
