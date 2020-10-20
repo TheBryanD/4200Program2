@@ -6,13 +6,17 @@ from collections import namedtuple
 
 #creates packets of data to send
 def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
-    data = struct.pack('!I', sequence_number)
-    data += struct.pack('!I', ack_number)
-    data += struct.pack("!c", ack)
-    data += struct.pack("!c", syn)
-    data += struct.pack("!c", fin)
-    data += struct.pack('512s', payload)
-    return data
+	try:
+		data = struct.pack('!I', sequence_number)
+		data += struct.pack('!I', ack_number)
+		data += struct.pack('29s', ''.encode())
+		data += struct.pack("!c", ack.encode())
+		data += struct.pack("!c", syn.encode())
+		data += struct.pack("!c", fin.encode())
+		data += struct.pack('512s', payload.encode())
+		return data
+	except Exception as ex:
+		print("Error creating packet: ", ex)
 
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -42,7 +46,7 @@ def send(seq_num, ack_num, ack, syn, fin, data, addr):
 	
 def recv():
 	data, addr = sock.recvfrom(1024)
-	seq_num, ack_num, notUsed, ack, syn, fin = struct.unpack('32s32s29sccc', data)
+	seq_num, ack_num, notUsed, ack, syn, fin = struct.unpack('II29sccc', data)
 	if(data):
 		print(data)
 	else:
@@ -54,12 +58,15 @@ ack_num = 0
 ack = 'N'
 syn = 'Y'
 fin = 'N'
-data = ''
+data = " "
 
 while True:
 	try:
 		if(seq_num == 12345):
+			debugData = createPacket(seq_num, ack_num, ack, syn, fin, data)
+			sock.sendto(debugData, server_addr)
 			send(seq_num, ack_num, ack, syn, fin, data, server_addr)
+			print("Data got sent")
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			seq_num, ack_num, notUsed, ack, syn, fin, addr = recv()

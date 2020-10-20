@@ -1,6 +1,6 @@
 import socket
-from socket import RCVALL_IPLEVEL
 import struct
+from struct import unpack
 import sys
 import time
 import urllib.request, urllib.error, urllib.parse
@@ -8,14 +8,18 @@ from typing import Sequence
 
 
 #creates packets of data to send
-def createPacket(sequence_nunmber, ack_number, ack, syn, fin):
-    data = struct.pack('32s', sequence_nunmber)
-    data += struct.pack('32s', ack_number)
-    data += struct.pack('29s', '')
-    data += struct.pack("!c", ack)
-    data += struct.pack("!c", syn)
-    data += struct.pack("!c", fin)
-    return data
+def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
+    try:
+        data = struct.pack('!I', sequence_nunmber)
+        data += struct.pack('!I', ack_number)
+        data += struct.pack('29s', '')
+        data += struct.pack("!c", ack)
+        data += struct.pack("!c", syn)
+        data += struct.pack("!c", fin)
+        data += struct.pack('512s', payload)
+        return data
+    except Exception as ex:
+        print("Error creating packet: ", + ex)
 
 
 port = 0
@@ -45,7 +49,7 @@ localWebFileSave = open('C:\\Sample Files\\webpage.html', 'w').write(str(content
 print(str(webpageToDownload) + " was saved to local storage.")
 
 #step 3 - specify where the server should listen on, IP and port
-server_addr_obj = ('127.0.0.1', int(port))
+server_addr_obj = ('localhost', int(port))
 sock.bind(server_addr_obj)
 print("Address : ", server_addr_obj)
 print("Port : ", port)
@@ -54,27 +58,36 @@ while True:
     try:
     #Receive data from client
         recvData, addr = sock.recvfrom(1024)
-        unpacker = struct.Struct('32s32s29sccc')
-        unpacker.unpack(recvData)
-
+        print("received data")
+        unpacker = struct.Struct('II29sccc512s')
+        print("unpacker created")
+        unpackedData = unpacker.unpack(recvData)
+        print("received: ", unpackedData)
         #send data back to client and log
-        if int(recvData[0]) == 12345:
+        if int(unpackedData[0]) == 12345:
             #send ack handshake packet
-            if recvData[4] == 'Y':
+            print("This packet was a handshake packet")
+            if unpackedData[4].decode() == 'Y':
+                print("syn: Y")
                 syn = 'Y'
             else: 
+                print("syn: N")
                 syn = 'N'
-            sqnc_num = int(recvData[0])
+            sqnc_num = unpackedData[0]
+            print("Creating Header")
             header = createPacket(100, sqnc_num+1, 'Y', syn, 'N')
+            print("Sending header")
             sock.sendto(addr, header)
+            print("HeaderSent")
 
-            file.write("RECV ", sqnc_num, " ", recvData[1], " ", recvData[3], " ", recvData[4], " ", recvData[5])
+            file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
             file.write("SEND ", 100, " ", sqnc_num+1, " ", 'Y', " ", syn, " ", 'N')
         else:
             isLastPacket = False
+            print("This packet was not a handshake packet")
             #create packet to send back
-            sqnc_num = recvData[1] +1
-            ack_num = recvData[0] +1
+            sqnc_num = unpackedData[1] +1
+            ack_num = unpackedData[0] +1
             ack = 'Y'
             syn = 'N'
             if isLastPacket == True:
@@ -84,12 +97,12 @@ while True:
             header = createPacket(sqnc_num, ack_num, ack, syn, fin)
             sock.sendto(header, addr)
 
-            file.write("RECV ", sqnc_num, " ", recvData[1], " ", recvData[3], " ", recvData[4], " ", recvData[5])
+            file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
             file.write("SEND ", ack_num, " ", sqnc_num+1, " ", ack, " ", syn, " ", fin)
 
         #print data to screen
-        if(recvData):
-            print(recvData)
+        if(unpackedData):
+            print(unpackedData)
         else:
             time.sleep(2)
 
@@ -97,6 +110,7 @@ while True:
     except KeyboardInterrupt: #CTRL+^C
         sock.close()
         file.close()
-    except:
+    except Exception as ex:
+        print("Error: ", ex)
         sock.close()
         file.close()
