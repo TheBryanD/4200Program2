@@ -66,8 +66,8 @@ while True:
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			unpackedData, addr = recv()
-			seq_num = unpackedData[1]
-			ack_num = unpackedData[0]
+			seq_num = int(unpackedData[1])
+			ack_num = int(unpackedData[0])
 			ack = unpackedData[2]
 			syn = unpackedData[3]
 			fin = unpackedData[4]
@@ -81,8 +81,8 @@ while True:
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 		else:
 			unpackedData, addr = recv()
-			seq_num = unpackedData[1]
-			ack_num = unpackedData[0]
+			seq_num = int(unpackedData[1])
+			ack_num = int(unpackedData[0])
 			ack = unpackedData[2]
 			syn = unpackedData[3]
 			fin = unpackedData[4]
