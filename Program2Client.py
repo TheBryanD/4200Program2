@@ -43,12 +43,13 @@ def send(seq_num, ack_num, ack, syn, fin, data, addr):
 
 	send_data = createPacket(seq_num, ack_num, ack, syn, fin, data)
 	sock.sendto(send_data, server_addr)
+	print("Sent: " + str(send_data))
 	
 def recv():
 	data, addr = sock.recvfrom(1024)
 	unpacker = struct.Struct('!II29sccc512s')
 	unpackedData = unpacker.unpack(data)
-	print(data)
+	print("Received Data: " + str(data))
 	return unpackedData, addr
 
 seq_num = 12345
@@ -63,43 +64,60 @@ while True:
 		if(seq_num == 12345):
 			send(seq_num, ack_num, ack, syn, fin, data, server_addr)
 			print("Data got sent")
-			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
-
+			try:
+				file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			except Exception as ex:
+				print(ex)
+				exit()
+			print("writing to log")
 			unpackedData, addr = recv()
 			seq_num = int(unpackedData[1])
 			ack_num = int(unpackedData[0])
-			ack = unpackedData[2]
-			syn = unpackedData[3]
-			fin = unpackedData[4]
+			ack = unpackedData[3].decode()
+			syn = unpackedData[4].decode()
+			fin = unpackedData[5].decode()
 
 			print("Data got received")
-			file.write("RECV ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
-
+			print(ack)
+			try:
+				file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			except Exception as ex:
+				print(ex)
+				exit()
 			ack_num += 1
 			syn = 'N'
-			send(seq_num, ack_num, ack, syn, fin, data, addr)
-			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
+			print("trying to send next packet")
+			try:
+				send(seq_num, ack_num, ack, syn, fin, data, server_addr)
+				print("sending next packet")
+			except Exception as ex:
+				print(ex)
+			print("wrote to file")
+			file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 		else:
+			#print("try to receive")
 			unpackedData, addr = recv()
-			seq_num = int(unpackedData[1])
-			ack_num = int(unpackedData[0])
+			print("data received")
+			seq_num = int(unpackedData[1]+1)
+			ack_num = int(unpackedData[0]+1)
 			ack = unpackedData[2]
 			syn = unpackedData[3]
 			fin = unpackedData[4]
 
 			print("Data got received")
-			file.write("RECV ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
-
+			file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			print("wrote to file")
 			if(fin == 'Y'):
 				ack = 'Y'
 				ack_num += 512
 				send(seq_num, ack_num, ack, syn, fin, data, addr)
-				file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
+				file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 				exit()
 
 			ack_num += 512
 			send(seq_num, ack_num, ack, syn, fin, data, addr)
-			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
+			file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			print("ending loop and doing again")
 
 	except KeyboardInterrupt:
 		sock.close()

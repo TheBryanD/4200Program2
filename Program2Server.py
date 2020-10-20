@@ -57,11 +57,12 @@ while True:
     try:
     #Receive data from client
         recvData, addr = sock.recvfrom(1024)
-        print("received data")
+        print("Data received")
         unpacker = struct.Struct('!II29sccc512s')
-        print("unpacker created")
+        print("Unpacker created")
         unpackedData = unpacker.unpack(recvData)
-        print("received: ", unpackedData)
+        print("Received: ", unpackedData)
+
         #send data back to client and log
         if int(unpackedData[0]) == 12345:
             #send ack handshake packet
@@ -75,18 +76,21 @@ while True:
             sqnc_num = unpackedData[0]
             print("Creating Header")
             header = createPacket(100, sqnc_num+1, 'Y', syn, 'N', "")
-            print("Sending header")
+            print("Sending header: " + str(header))
             sock.sendto(header, addr)
             print("HeaderSent")
+            print("Sent: " + str(header)) 
 
-            file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
-            file.write("SEND ", 100, " ", sqnc_num+1, " ", 'Y', " ", syn, " ", 'N')
+            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            file.write("SEND " + str(100) + " " + str((sqnc_num+1)) + " " + 'Y' + " " + syn + " " + 'N' + '\n')
+            print("Logged data and finished first loop")
+            print("Trying to receive data: ")
         else:
             isLastPacket = False
             print("This packet was not a handshake packet")
             #create packet to send back
             sqnc_num = unpackedData[1]+1
-            ack_num = unpackedData[0]+1
+            ack_num = unpackedData[0]
             ack = 'Y'
             syn = 'N'
             if isLastPacket == True:
@@ -100,18 +104,14 @@ while True:
                 print(ex)
                 exit(1)
 
-            print("Sending Header")
+            print("Sending Header" + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin )
             sock.sendto(header, addr)
             print("Header sent")
 
-            file.write("RECV ", sqnc_num, " ", unpackedData[1], " ", unpackedData[3], " ", unpackedData[4], " ", unpackedData[5])
-            file.write("SEND ", ack_num, " ", sqnc_num+1, " ", ack, " ", syn, " ", fin)
-
-        #print data to screen
-        if(unpackedData):
-            print(unpackedData)
-        else:
-            time.sleep(2)
+            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            file.write("SEND " + str(ack_num) + " " + str((sqnc_num+1)) + " " + ack + " " + syn + " " + fin + '\n')
+            print("finishing loop and doing again")
+            print("Trying to receive Data: ")
 
 
     except KeyboardInterrupt: #CTRL+^C
