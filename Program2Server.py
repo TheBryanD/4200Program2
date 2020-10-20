@@ -25,6 +25,9 @@ def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
 
 port = 0
 seekFrom = 0
+chunks = []
+payloadIterator = 0
+isLastPacket = False
 
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -51,6 +54,14 @@ localWebFileSave = open('C:\\Sample Files\\webpage.html', 'w').write(str(content
 print(str(webpageToDownload) + " was saved to local storage.")
 sizeOfHtml = getsizeof(open('C:\\Sample Files\\webpage.html', 'r').read())
 print("size of html in bytes: " + str(sizeOfHtml))
+size = 0
+i = 0
+data = open("C:\\Sample Files\\webpage.html", 'r')
+while size < sizeOfHtml:
+    chunks.append( data.read(512))
+    size += 512
+    i += 1
+data.close()
 
 #step 3 - specify where the server should listen on, IP and port
 server_addr_obj = ('localhost', int(port))
@@ -87,6 +98,7 @@ while True:
             except:
                 print("Error occurred, retransmitting")
                 file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+                time.sleep(0.5)
                 sock.sendto(header, addr)
             print("HeaderSent")
             print("Sent: " + str(header)) 
@@ -96,7 +108,6 @@ while True:
             print("Logged data and finished first loop")
             print("Trying to receive data: ")
         else:
-            isLastPacket = False
             print("This packet was not a handshake packet")
             #create packet to send back
             sqnc_num = unpackedData[1]+1
@@ -111,23 +122,26 @@ while True:
 
             #Create 512 bytes of the file to send as the payload
             try:
-                data = open('C:\\Sample Files\\webpage.html', 'r')
-                chunk = data.read(512)
-                if not chunk:
-                    isLastPacket = True
-                    exit()
-                header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
+                chunk = chunks[payloadIterator]
                 data.close()
+                try:   
+                    next = chunks[payloadIterator+2]
+                except IndexError:
+                    isLastPacket = True
+                    continue
+            except IndexError:
+                print("Index out of bounds while creating chunks")
             except Exception as ex:
                 print(ex)
-                exit(1)
 
+            header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
             #Send to client and log
             print("Sending Header " + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin + " ")
             try:
                 sock.sendto(header, addr)
             except:
                 print("Error occurred, retransmitting")
+                time.sleep(0.5)
                 file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             print("Header sent")
 
@@ -135,6 +149,11 @@ while True:
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
             print("finishing loop and doing again")
             print("Trying to receive Data: ")
+            payloadIterator += 1
+            if isLastPacket == True:
+                sock.close()
+                file.close()
+                exit()
 
 
     except KeyboardInterrupt: #CTRL+^C

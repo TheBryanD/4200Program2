@@ -3,7 +3,7 @@ import struct
 import sys
 import time
 from collections import namedtuple
-
+ 
 #creates packets of data to send
 def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
 	try:
