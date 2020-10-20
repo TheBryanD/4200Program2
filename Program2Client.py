@@ -2,7 +2,6 @@ import socket
 import struct
 import sys
 import time
-from collections import namedtuple
 
 #creates packets of data to send
 def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
@@ -37,16 +36,22 @@ server_addr = (ip, port)
 print("Server address: ", server_addr)
 print("Server port: ", port)
 
-def send(seq_num, ack_num, ack, syn, fin, data, addr):
+def send(seq_num, ack_num, ack, syn, fin, addr):
 	if(addr[0] != server_addr[0] and addr[1] != server_addr[1]):
 		sys.exit(1)
 
-	send_data = createPacket(seq_num, ack_num, ack, syn, fin, data)
-	sock.sendto(send_data, server_addr)
+	send_data = createPacket(seq_num, ack_num, ack, syn, fin)
+	sock.sendto(send_data, addr)
+	print("I'm here")
 	
 def recv():
 	data, addr = sock.recvfrom(1024)
 	seq_num, ack_num, notUsed, ack, syn, fin = struct.unpack('II29sccc', data)
+	notUsed = notUsed.decode()
+	ack = ack.decode()
+	syn = syn.decode()
+	fin = fin.decode()
+	
 	if(data):
 		print(data)
 	else:
@@ -62,19 +67,19 @@ data = " "
 
 while True:
 	try:
+
 		if(seq_num == 12345):
-			debugData = createPacket(seq_num, ack_num, ack, syn, fin, data)
-			sock.sendto(debugData, server_addr)
 			send(seq_num, ack_num, ack, syn, fin, data, server_addr)
 			print("Data got sent")
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			seq_num, ack_num, notUsed, ack, syn, fin, addr = recv()
+			print("Data got received")
 			file.write("RECV ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 			ack_num += 1
 			syn = 'N'
-			send(seq_num, ack_num, ack, syn, fin, data, addr)
+			send(seq_num, ack_num, ack, syn, fin, addr)
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 		else:
 			seq_num, ack_num, notUsed, ack, syn, fin, addr = recv()
@@ -83,12 +88,12 @@ while True:
 			if(fin == 'Y'):
 				ack = 'Y'
 				ack_num += 512
-				send(seq_num, ack_num, ack, syn, fin, data, addr)
+				send(seq_num, ack_num, ack, syn, fin, addr)
 				file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 				exit()
 
 			ack_num += 512
-			send(seq_num, ack_num, ack, syn, fin, data, addr)
+			send(seq_num, ack_num, ack, syn, fin, addr)
 			file.write("SEND ", seq_num, " ", ack_num, " ", ack, " ", syn, " ", fin)
 
 	except KeyboardInterrupt:
