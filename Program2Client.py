@@ -43,13 +43,13 @@ def send(seq_num, ack_num, ack, syn, fin, data, addr):
 
 	send_data = createPacket(seq_num, ack_num, ack, syn, fin, data)
 	sock.sendto(send_data, server_addr)
-	print("Sent: " + str(send_data))
+	#print("Sent: " + str(send_data))
 	
 def recv():
 	data, addr = sock.recvfrom(1024)
 	unpacker = struct.Struct('!II29sccc512s')
 	unpackedData = unpacker.unpack(data)
-	print("Received Data: " + str(data))
+	#print("Received Data: " + str(data))
 	return unpackedData, addr
 
 seq_num = 12345
@@ -77,11 +77,13 @@ while True:
 			ack = unpackedData[3].decode()
 			syn = unpackedData[4].decode()
 			fin = unpackedData[5].decode()
+			print("seq_num: ", seq_num)
+			print("ack_num: ", ack_num)
 
 			print("Data got received")
-			print(ack)
+			#print(ack)
 			try:
-				file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+				file.write("RECV " + str(ack_num) + " " + str(seq_num) + " " + ack + " " + syn + " " + fin + '\n')
 			except Exception as ex:
 				print(ex)
 				exit()
@@ -99,8 +101,8 @@ while True:
 			#print("try to receive")
 			unpackedData, addr = recv()
 			print("data received")
-			seq_num = int(unpackedData[1]+1)
-			ack_num = int(unpackedData[0]+1)
+			seq_num = int(unpackedData[1])
+			ack_num = int(unpackedData[0])
 			ack = unpackedData[3].decode()
 			syn = unpackedData[4].decode()
 			fin = unpackedData[5].decode()
@@ -108,18 +110,19 @@ while True:
 
 			print("Data got received")
 			try:
-				file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+				file.write("RECV " + str(ack_num) + " " + str(seq_num) + " " + ack + " " + syn + " " + fin + '\n')
 			except Exception as ex:
 				print(ex)
 			print("wrote to file")
 			if(fin == 'Y'):
 				ack = 'Y'
-				ack_num += 512
+				ack_num += 513
 				send(seq_num, ack_num, ack, syn, fin, data, addr)
 				file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 				exit()
 
-			ack_num += 512
+			ack_num += 513
+			seq_num += 1
 			send(seq_num, ack_num, ack, syn, fin, data, addr)
 			file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 			print("ending loop and doing again")

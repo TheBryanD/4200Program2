@@ -94,7 +94,7 @@ while True:
             isLastPacket = False
             print("This packet was not a handshake packet")
             #create packet to send back
-            sqnc_num = unpackedData[1]+512
+            sqnc_num = unpackedData[1]+1
             ack_num = unpackedData[0]+1
             ack = 'Y'
             syn = 'N'
@@ -118,8 +118,8 @@ while True:
             sock.sendto(header, addr)
             print("Header sent")
 
-            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
-            file.write("SEND " + str(ack_num) + " " + str((sqnc_num+1)) + " " + ack + " " + syn + " " + fin + '\n')
+            file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num-1) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
             print("finishing loop and doing again")
             print("Trying to receive Data: ")
 
