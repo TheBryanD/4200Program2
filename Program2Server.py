@@ -18,7 +18,7 @@ def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
         data += struct.pack('512s', payload.encode())
         return data
     except Exception as ex:
-        print("Error creating packet: ", + ex)
+        print("Error creating packet: " + ex)
 
 
 port = 0
@@ -89,8 +89,8 @@ while True:
             isLastPacket = False
             print("This packet was not a handshake packet")
             #create packet to send back
-            sqnc_num = unpackedData[1]+1
-            ack_num = unpackedData[0]
+            sqnc_num = unpackedData[1]+512
+            ack_num = unpackedData[0]+1
             ack = 'Y'
             syn = 'N'
             if isLastPacket == True:
@@ -99,12 +99,15 @@ while True:
                 fin = 'N'
             print("Creating Header")
             try:
-                header = createPacket(sqnc_num, ack_num, ack, syn, fin, "")
+                data = open('C:\\Sample Files\\webpage.html', 'r')
+                readData = data.read()
+                header = createPacket(sqnc_num, ack_num, ack, syn, fin, readData)
+                data.close()
             except Exception as ex:
                 print(ex)
                 exit(1)
 
-            print("Sending Header" + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin )
+            print("Sending Header " + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin + " ")
             sock.sendto(header, addr)
             print("Header sent")
 

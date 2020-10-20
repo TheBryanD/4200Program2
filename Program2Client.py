@@ -73,6 +73,7 @@ while True:
 			unpackedData, addr = recv()
 			seq_num = int(unpackedData[1])
 			ack_num = int(unpackedData[0])
+			#!!!!! change indexes
 			ack = unpackedData[3].decode()
 			syn = unpackedData[4].decode()
 			fin = unpackedData[5].decode()
@@ -100,12 +101,16 @@ while True:
 			print("data received")
 			seq_num = int(unpackedData[1]+1)
 			ack_num = int(unpackedData[0]+1)
-			ack = unpackedData[2]
-			syn = unpackedData[3]
-			fin = unpackedData[4]
+			ack = unpackedData[3].decode()
+			syn = unpackedData[4].decode()
+			fin = unpackedData[5].decode()
+			payload = unpackedData[6].decode()
 
 			print("Data got received")
-			file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			try:
+				file.write("RECV " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
+			except Exception as ex:
+				print(ex)
 			print("wrote to file")
 			if(fin == 'Y'):
 				ack = 'Y'
