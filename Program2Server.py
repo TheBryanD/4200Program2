@@ -1,12 +1,13 @@
 from os import read
 import socket
 import struct
+from struct import unpack
 import sys
 from sys import getsizeof
 import time
 import urllib.request, urllib.error, urllib.parse
 from typing import Sequence
-
+import math
 
 #creates packets of data to send
 def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
@@ -62,6 +63,15 @@ while size < sizeOfHtml:
     size += 512
     i += 1
 data.close()
+totalNumIteration = int(math.ceil(sizeOfHtml/512))
+"""
+used to debug and see each packet payload
+i =0
+for chunk in chunks:
+    print(str(i) + ": " + str(chunk))
+    i += 1
+exit()
+"""
 
 #step 3 - specify where the server should listen on, IP and port
 server_addr_obj = ('localhost', int(port))
@@ -69,15 +79,24 @@ sock.bind(server_addr_obj)
 print("Address : ", server_addr_obj)
 print("Port : ", port)
 
-while True:
+while payloadIterator < totalNumIteration+1:
     try:
     #Receive data from client
         recvData, addr = sock.recvfrom(1024)
-        print("Data received")
+        #print("Data received: " + str(recvData))
         unpacker = struct.Struct('!II29sccc512s')
         print("Unpacker created")
         unpackedData = unpacker.unpack(recvData)
-        print("Received: ", unpackedData)
+        print("Received: ")
+
+        unpack1 = unpackedData[0]
+        unpack2 = unpackedData[1]
+        unpack3 = unpackedData[3].decode()
+        unpack4 = unpackedData[4].decode()
+        unpack5 = unpackedData[5].decode()
+        unpack6 = unpackedData[6].decode()
+        print(str(unpack1) + " " + str(unpack2) + " " + str(unpack3) + " " + str(unpack4) + " " + str(unpack5) + " " + unpack6)
+        
 
         #send data back to client and log
         if int(unpackedData[0]) == 12345:
@@ -114,6 +133,8 @@ while True:
             ack_num = unpackedData[0]+1
             ack = 'Y'
             syn = 'N'
+            if payloadIterator+2 == totalNumIteration:
+                isLastPacket = True
             if isLastPacket == True:
                 fin = 'Y'
             else:
@@ -124,11 +145,6 @@ while True:
             try:
                 chunk = chunks[payloadIterator]
                 data.close()
-                try:   
-                    next = chunks[payloadIterator+2]
-                except IndexError:
-                    isLastPacket = True
-                    continue
             except IndexError:
                 print("Index out of bounds while creating chunks")
             except Exception as ex:
@@ -147,13 +163,16 @@ while True:
 
             file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num-1) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
-            print("finishing loop and doing again")
-            print("Trying to receive Data: ")
             payloadIterator += 1
             if isLastPacket == True:
+                print("Program ended")
                 sock.close()
                 file.close()
-                exit()
+                sys.exit(1)
+            else:
+                print("finishing loop and doing again")
+                print("Trying to receive Data: ")
+
 
 
     except KeyboardInterrupt: #CTRL+^C
