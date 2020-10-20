@@ -79,7 +79,7 @@ sock.bind(server_addr_obj)
 print("Address : ", server_addr_obj)
 print("Port : ", port)
 
-while payloadIterator < totalNumIteration+1:
+while True:
     try:
     #Receive data from client
         recvData, addr = sock.recvfrom(1024)
@@ -165,10 +165,12 @@ while payloadIterator < totalNumIteration+1:
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
             payloadIterator += 1
             if isLastPacket == True:
+                payloadIterator = 0
+                isLastPacket = False
                 print("Program ended")
-                sock.close()
-                file.close()
-                sys.exit(1)
+                #sock.close()
+                #file.close()
+                #sys.exit(1)
             else:
                 print("finishing loop and doing again")
                 print("Trying to receive Data: ")

@@ -26,7 +26,7 @@ try:
     ip = sys.argv[1]
     port = int(sys.argv[2])
     logFile = sys.argv[3]
-    file = open(logFile, "a")
+    file = open(logFile, "w")
 except Exception as ex:
     print("Invalid command line arguments: Client.py <hostname/ip> <port> <logfile>")
     print(ex)
@@ -116,13 +116,12 @@ while True:
 			print("wrote to file")
 			if(fin == 'Y'):
 				ack = 'Y'
-				ack_num += 513
+				ack_num += 512
 				send(seq_num, ack_num, ack, syn, fin, data, addr)
 				file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
-				exit()
+				break
 
-			ack_num += 513
-			seq_num += 1
+			ack_num += 512
 			send(seq_num, ack_num, ack, syn, fin, data, addr)
 			file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 			print("ending loop and doing again")
