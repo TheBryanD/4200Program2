@@ -82,7 +82,12 @@ while True:
             print("Creating Header")
             header = createPacket(100, sqnc_num+1, 'Y', syn, 'N', "")
             print("Sending header: " + str(header))
-            sock.sendto(header, addr)
+            try:
+                sock.sendto(header, addr)
+            except:
+                print("Error occurred, retransmitting")
+                file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+                sock.sendto(header, addr)
             print("HeaderSent")
             print("Sent: " + str(header)) 
 
@@ -103,10 +108,13 @@ while True:
             else:
                 fin = 'N'
             print("Creating Header")
+
+            #Create 512 bytes of the file to send as the payload
             try:
                 data = open('C:\\Sample Files\\webpage.html', 'r')
                 chunk = data.read(512)
-                if chunk is None:
+                if not chunk:
+                    isLastPacket = True
                     exit()
                 header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
                 data.close()
@@ -114,8 +122,13 @@ while True:
                 print(ex)
                 exit(1)
 
+            #Send to client and log
             print("Sending Header " + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin + " ")
-            sock.sendto(header, addr)
+            try:
+                sock.sendto(header, addr)
+            except:
+                print("Error occurred, retransmitting")
+                file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             print("Header sent")
 
             file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num-1) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
