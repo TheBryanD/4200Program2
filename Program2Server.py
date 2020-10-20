@@ -145,7 +145,10 @@ while True:
         else:
             print("This packet was not a handshake packet")
             #create packet to send back
-            sqnc_num = unpackedData[1]+1
+            if unpackedData[1] == 101:
+                sqnc_num = unpackedData[1]+1
+            else:
+                sqnc_num = unpackedData[1]
             ack_num = unpackedData[0]+1
             ackNumToCompare = unpackedData[0]+1
             ack = 'Y'
@@ -176,7 +179,7 @@ while True:
             print("Header sent")
 
             #Log info 
-            file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num-1) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
             #iteration +=1 
             payloadIterator += 1
