@@ -1,6 +1,8 @@
+from os import read
 import socket
 import struct
 import sys
+from sys import getsizeof
 import time
 import urllib.request, urllib.error, urllib.parse
 from typing import Sequence
@@ -22,6 +24,7 @@ def createPacket(sequence_nunmber, ack_number, ack, syn, fin, payload):
 
 
 port = 0
+seekFrom = 0
 
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -46,6 +49,8 @@ localWebFileSave = open('C:\\Sample Files\\webpage.html', 'w').write(str(content
 #localWebFileSave = open('webPage.html', 'wb').write(webcontent)
 #localWebFileSave.close()
 print(str(webpageToDownload) + " was saved to local storage.")
+sizeOfHtml = getsizeof(open('C:\\Sample Files\\webpage.html', 'r').read())
+print("size of html in bytes: " + str(sizeOfHtml))
 
 #step 3 - specify where the server should listen on, IP and port
 server_addr_obj = ('localhost', int(port))
@@ -100,8 +105,10 @@ while True:
             print("Creating Header")
             try:
                 data = open('C:\\Sample Files\\webpage.html', 'r')
-                readData = data.read()
-                header = createPacket(sqnc_num, ack_num, ack, syn, fin, readData)
+                chunk = data.read(512)
+                if chunk is None:
+                    exit()
+                header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
                 data.close()
             except Exception as ex:
                 print(ex)
