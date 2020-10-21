@@ -32,7 +32,7 @@ ackNumToCompare = 12345
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--port', required=True, help="Port", type=int)
-parser.add_argument('-s', '--log', required=True, help="Logfile")
+parser.add_argument('-l', '--log', required=True, help="Logfile")
 parser.add_argument('-w', '--web', help="Webpage", default="http://www.nytimes.com")
 
 #step 1 - create the socket object
