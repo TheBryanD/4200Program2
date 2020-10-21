@@ -2,6 +2,7 @@ import socket
 import struct
 import sys
 import time
+import argparse
  
 #creates packets of data to send
 def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
@@ -17,19 +18,28 @@ def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
 	except Exception as ex:
 		print("Error creating packet: ", ex)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', '--server', help="Server IP")
+parser.add_argument('-p', '--port', help="Port", type=int)
+parser.add_argument('-l', '--log', help="Logfile")
+
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 #Parse command line arguments
 try:
-    ip = sys.argv[1]
-    port = int(sys.argv[2])
-    logFile = sys.argv[3]
-    file = open(logFile, "w")
+	args = parser.parse_args()
+	ip = args.server
+	port = args.port
+	logFile = args.log
+	file = open(logFile, "w")
 except Exception as ex:
     print("Invalid command line arguments: Client.py <hostname/ip> <port> <logfile>")
     print(ex)
     sys.exit(-1)
+except argparse.ArgumentError:
+	print("Invalid command line arguments: Server.py <port> <logFile> <webpage>")
+	sys.exit(-1)
 
 #step 2 - Create address
 server_addr = (ip, port)
@@ -112,9 +122,9 @@ while finished:
 			send(seq_num, ack_num, ack, syn, fin, data, addr)
 			file.write("SEND " + str(seq_num) + " " + str(ack_num) + " " + ack + " " + syn + " " + fin + '\n')
 
-	except KeyboardInterrupt:
-		sock.close()
-		file.close()
 	except:
 		sock.close()
 		file.close()
+
+file.close()
+sock.close()

@@ -30,32 +30,27 @@ payloadIterator = 0
 isLastPacket = False
 ackNumToCompare = 12345
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--port', help="Port", type=int)
+parser.add_argument('-s', '--log', help="Logfile")
+parser.add_argument('-w', '--web', help="Webpage", default="http://www.nytimes.com")
+
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 #Parse command line arguments
 try:
-    parser = argparse.ArgumentParser(description="Server for Csc4200 Program2")
-    parser.add_argument('-p', '--port', type=int, help="The port of the server")
-    parser.add_argument('-l', '--logFile', type=str, help="The destination of the log file")
-    parser.add_argument('-w', '--webpage', type=str, help="The webpage that is getting downloaded")
     args = parser.parse_args()
-    
     port = args.port
-    logFile = args.logFile
-    webpageToDownload = args.webpage
-    file = open('logFile', 'w')
-    """try:
-    port = int(sys.argv[1])
-    logFile = sys.argv[2]
-    webpageToDownload = sys.argv[3]
-    file = open(logFile, "w")"""
+    logFile = args.log
+    webpageToDownload = args.web
+    file = open(logFile, "w")
 except Exception as ex:
-    print("Invalid command line arguments: Server.py -p <port> -l <logFile> -w <webpage>")
-    #print(ex)
+    print(ex)
+    print("Invalid command line arguments: Server.py <port> <logFile> <webpage>")
     sys.exit(-1)
 except argparse.ArgumentError:
-    print("Invalid command line arguments: Server.py -p <port> -l <logFile> -w <webpage>")
+    print("Invalid command line arguments: Server.py <port> <logFile> <webpage>")
     sys.exit(-1)
 
 #step 2 - save webpage
