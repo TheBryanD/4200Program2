@@ -35,13 +35,13 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 #Parse command line arguments
 try:
-    port = sys.argv[1]
+    port = int(sys.argv[1])
     logFile = sys.argv[2]
     webpageToDownload = sys.argv[3]
     file = open(logFile, "w")
 except:
     print("Invalid command line arguments: Server.py <port> <logFile> <webpage>")
-    sys.exit(0)
+    sys.exit(-1)
 
 #step 2 - save webpage
 opener = urllib.request.FancyURLopener({})
@@ -111,7 +111,7 @@ while True:
             sock.sendto(header, addr)
             print("Error, RETRANSMITTING...")
             time.sleep(0.5)
-            file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            file.write("RETRANS " + str(sqnc_num) + " " + str(unpackedData[0]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
 
         #send data back to client and log
             #If a handshake packet

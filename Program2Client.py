@@ -30,7 +30,7 @@ try:
 except Exception as ex:
     print("Invalid command line arguments: Client.py <hostname/ip> <port> <logfile>")
     print(ex)
-    sys.exit(0)
+    sys.exit(-1)
 
 #step 2 - Create address
 server_addr = (ip, port)
