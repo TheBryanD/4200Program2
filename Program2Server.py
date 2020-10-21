@@ -38,7 +38,7 @@ try:
     port = sys.argv[1]
     logFile = sys.argv[2]
     webpageToDownload = sys.argv[3]
-    file = open(logFile, "a")
+    file = open(logFile, "w")
 except:
     print("Invalid command line arguments: Server.py <port> <logFile> <webpage>")
     sys.exit(0)
@@ -97,9 +97,10 @@ while True:
         unpack6 = unpackedData[6].decode()
         print(str(unpack1) + " " + str(unpack2) + " " + str(unpack3) + " " + str(unpack4) + " " + str(unpack5) + " " + unpack6)
 
-        #If last packet was received (Fin == 'Y'), Log the info and start the loop again
+        file.write("RECV " + str(unpack1) + " " + str(unpack2) + " " + unpack3 + " " + unpack4 + " " + unpack5 + '\n')
+
+        #If last packet was received (Fin == 'Y'), Restart the logs and start the loop again
         if unpack5 == 'Y':
-            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             #close then reopen file to save what was logged
             file.close()
             file = open(logFile, "a")
@@ -137,7 +138,6 @@ while True:
             print("Sent: " + str(header)) 
 
             #Log the info
-            file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(100) + " " + str((sqnc_num+1)) + " " + 'Y' + " " + syn + " " + 'N' + '\n')
             print("Logged data and finished first loop")
             print("Trying to receive data: ")
@@ -180,7 +180,6 @@ while True:
             print("Header sent")
 
             #Log info 
-            file.write("RECV " + str(ack_num-1) + " " + str(sqnc_num) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
             #iteration +=1 
             payloadIterator += 1
@@ -199,10 +198,10 @@ while True:
 
 
     except KeyboardInterrupt: #CTRL+^C
-        sock.close()
         file.close()
+        sock.close()
     except:
     #except Exception as ex:
         #print("Error: ", ex)
-        sock.close()
         file.close()
+        sock.close()
