@@ -19,9 +19,9 @@ def createPacket(sequence_number, ack_number, ack, syn, fin, payload):
 		print("Error creating packet: ", ex)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', help="Server IP")
-parser.add_argument('-p', '--port', help="Port", type=int)
-parser.add_argument('-l', '--log', help="Logfile")
+parser.add_argument('-s', '--server', required=True, help="Server IP")
+parser.add_argument('-p', '--port', required=True, help="Port", type=int)
+parser.add_argument('-l', '--log', required=True, help="Logfile")
 
 #step 1 - create the socket object
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
