@@ -5,7 +5,6 @@ import sys
 from sys import getsizeof
 import time
 import urllib.request, urllib.error, urllib.parse
-from typing import Sequence
 import math
 
 #creates packets of data to send
@@ -48,10 +47,6 @@ opener = urllib.request.FancyURLopener({})
 f = opener.open(webpageToDownload)
 content = f.read()
 localWebFileSave = open('C:\\Sample Files\\webpage.html', 'w').write(str(content))
-#response = urllib.request.urlopen(webpageToDownload)
-#webcontent = response.read()
-#localWebFileSave = open('webPage.html', 'wb').write(webcontent)
-#localWebFileSave.close()
 print(str(webpageToDownload) + " was saved to local storage.")
 sizeOfHtml = getsizeof(open('C:\\Sample Files\\webpage.html', 'r').read())
 print("size of html in bytes: " + str(sizeOfHtml))
@@ -64,14 +59,6 @@ while size < sizeOfHtml:
     i += 1
 data.close()
 totalNumIteration = int(math.ceil(sizeOfHtml/512))
-"""
-used to debug and see each packet payload
-i =0
-for chunk in chunks:
-    print(str(i) + ": " + str(chunk))
-    i += 1
-exit()
-"""
 
 #step 3 - specify where the server should listen on, IP and port
 server_addr_obj = ('localhost', int(port))
@@ -81,13 +68,11 @@ print("Port : ", port)
 
 while True:
     try:
-    #Receive data from client
+        #Receive data from client
         recvData, addr = sock.recvfrom(1024)
-        #print("Data received: " + str(recvData))
         unpacker = struct.Struct('!II29sccc512s')
-        print("Unpacker created")
         unpackedData = unpacker.unpack(recvData)
-        print("Received: ")
+
         #Easier to read Info
         unpack1 = unpackedData[0]
         unpack2 = unpackedData[1]
@@ -95,7 +80,6 @@ while True:
         unpack4 = unpackedData[4].decode()
         unpack5 = unpackedData[5].decode()
         unpack6 = unpackedData[6].decode()
-        print(str(unpack1) + " " + str(unpack2) + " " + str(unpack3) + " " + str(unpack4) + " " + str(unpack5) + " " + unpack6)
 
         file.write("RECV " + str(unpack1) + " " + str(unpack2) + " " + unpack3 + " " + unpack4 + " " + unpack5 + '\n')
 
@@ -117,34 +101,24 @@ while True:
             #If a handshake packet
         if int(unpackedData[0]) == 12345:
             #send ack handshake packet
-            print("This packet was a handshake packet")
             if unpackedData[4].decode() == 'Y':
-                print("syn: Y")
                 syn = 'Y'
-            else: 
-                print("syn: N")
+            else:
                 syn = 'N'
             
             #Create Packet to send
             sqnc_num = unpackedData[0]
             ackNumToCompare = unpackedData[0]+1
-            print("Creating Header")
             header = createPacket(100, sqnc_num+1, 'Y', syn, 'N', "")
-            print("Sending header: " + str(header))
 
             #send
             sock.sendto(header, addr)
-            print("HeaderSent")
-            print("Sent: " + str(header)) 
 
             #Log the info
             file.write("SEND " + str(100) + " " + str((sqnc_num+1)) + " " + 'Y' + " " + syn + " " + 'N' + '\n')
-            print("Logged data and finished first loop")
-            print("Trying to receive data: ")
 
             #If not a handshake packet
         else:
-            print("This packet was not a handshake packet")
             #create packet to send back
             if unpackedData[1] == 101:
                 sqnc_num = unpackedData[1]+1
@@ -160,28 +134,19 @@ while True:
                 fin = 'Y'
             else:
                 fin = 'N'
-            print("Creating Header")
 
             #Create 512 bytes of the file to send as the payload
-            #try:
             chunk = chunks[payloadIterator]
             data.close()
-            #except IndexError:
-            #    print("Index out of bounds while creating chunks")
-            # except Exception as ex:
-            #    print(ex)
 
             #Create packet to send back
             header = createPacket(sqnc_num, ack_num, ack, syn, fin, chunk)
 
             #Send to client
-            print("Sending Header " + str(sqnc_num) +" "+ str(ack_num) +" "+ ack + " " + syn + " " + fin + " ")
             sock.sendto(header, addr)
-            print("Header sent")
 
             #Log info 
             file.write("SEND " + str(sqnc_num) + " " + str((ack_num)) + " " + ack + " " + syn + " " + fin + '\n')
-            #iteration +=1 
             payloadIterator += 1
 
             #Check and see if this is the last packet to send to the client
@@ -192,16 +157,11 @@ while True:
  
                 #If not last packet, Continue looping with variables the way they are
             else:
-                print("finishing loop and doing again")
-                print("Trying to receive Data: ")
-
-
+                pass
 
     except KeyboardInterrupt: #CTRL+^C
         file.close()
         sock.close()
     except:
-    #except Exception as ex:
-        #print("Error: ", ex)
         file.close()
         sock.close()
