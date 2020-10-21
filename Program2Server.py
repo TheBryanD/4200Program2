@@ -1,7 +1,6 @@
 from os import read
 import socket
 import struct
-from struct import unpack
 import sys
 from sys import getsizeof
 import time
@@ -101,7 +100,9 @@ while True:
         #If last packet was received (Fin == 'Y'), Log the info and start the loop again
         if unpack5 == 'Y':
             file.write("RECV " + str(sqnc_num) + " " + str(unpackedData[1]) + " " + unpackedData[3].decode() + " " + unpackedData[4].decode() + " " + unpackedData[5].decode() + '\n')
+            #close then reopen file to save what was logged
             file.close()
+            file = open(logFile, "a")
             continue
         
         #If packets ack isnt the ack expected, and its not the handshake packet, wait 0.5sec and send again
